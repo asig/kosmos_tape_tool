@@ -39,16 +39,15 @@ func normalize(val uint32) uint32 {
 	// The thresholds are only correct for 44100 sample rate!
 	if val < 35 {
 		return 20
-	} else {
-		return 50
 	}
+	return 50
 }
 
 type Frequency int
 
 const (
-	low  Frequency = iota
-	high Frequency = iota
+	FreqLow  Frequency = iota
+	FreqHigh Frequency = iota
 )
 
 type Tone struct {
@@ -123,9 +122,9 @@ func (self *WavReader) init(filename string) {
 func (self *WavReader) emit(Δt, duration uint32) {
 	var freq Frequency
 	if Δt < 30 {
-		freq = high
+		freq = FreqHigh
 	} else {
-		freq = low
+		freq = FreqLow
 	}
 
 	log.Printf("Δt = %d for %d cycles (%.4f secs)", Δt, duration, float64(duration)/float64(self.sampleRate))
