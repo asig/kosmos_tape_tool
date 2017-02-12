@@ -151,5 +151,5 @@ func (self *WavReader) read() {
 		}
 	}
 	self.emit(lastΔt, i-startPos)
-	self.emit(0, 0)
+	close(self.channel)
 }
