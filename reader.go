@@ -41,7 +41,6 @@ func tonesToBits(toneChannel chan Tone, bitChannel chan uint) {
 	// Now, read bits
 	cnt := 0
 	for {
-		cnt++
 		tone1, more := <-toneChannel
 		if !more {
 			break
@@ -50,6 +49,7 @@ func tonesToBits(toneChannel chan Tone, bitChannel chan uint) {
 		if !more {
 			break
 		}
+		cnt++
 		if tone1.Freq != FreqHigh || tone2.Freq != FreqLow {
 			log.Printf("Unrecognized data, quitting")
 			break
