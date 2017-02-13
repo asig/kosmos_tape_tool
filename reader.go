@@ -1,32 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 )
 
-var (
-	wavname string
-	binname string
-)
-
-func usage() {
-	_, file := filepath.Split(os.Args[0])
-	fmt.Printf("Usage: %s <wav-file> <target>\n", file)
-	os.Exit(1)
+type TapeReader struct {
+	binName string
+	wavName string
 }
-
-func init() {
-	if len(os.Args) != 3 {
-		usage()
-	}
-	wavname = os.Args[1]
-	binname = os.Args[2]
-}
-
-type converterState int
 
 func tonesToBits(toneChannel chan Tone, bitChannel chan uint) {
 	// wait for the signal tone (16 secs low frequency)
@@ -90,8 +72,8 @@ func bitsToBytes(bitChannel chan uint, byteChannel chan byte) {
 	close(byteChannel)
 }
 
-func bytesToFile(byteChannel chan byte) {
-	f, err := os.Create(binname)
+func bytesToFile(byteChannel chan byte, binName string) {
+	f, err := os.Create(binName)
 	checkErr(err)
 	defer f.Close()
 	cnt := 0
@@ -105,16 +87,16 @@ func bytesToFile(byteChannel chan byte) {
 		f.Write([]byte{b})
 		cnt++
 	}
-	log.Printf("Wrote %d bytes to file %s.", cnt, binname)
+	log.Printf("Wrote %d bytes to file %s.", cnt, binName)
 }
 
-func main() {
+func (self *TapeReader) convert() {
 	toneChannel := make(chan Tone)
 	bitChannel := make(chan uint)
 	byteChannel := make(chan byte)
-	wavReader := NewWavReader(wavname, toneChannel)
-	go wavReader.read()
+	wavReader := NewWavReader(self.wavName, toneChannel)
+	go wavReader.Read()
 	go tonesToBits(toneChannel, bitChannel)
 	go bitsToBytes(bitChannel, byteChannel)
-	bytesToFile(byteChannel)
+	bytesToFile(byteChannel, self.binName)
 }

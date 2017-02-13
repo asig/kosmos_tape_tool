@@ -119,7 +119,7 @@ func (self *WavReader) emit(Δt, duration uint32) {
 	self.channel <- Tone{freq, float64(duration) / float64(self.sampleRate)}
 }
 
-func (self *WavReader) read() {
+func (self *WavReader) Read() {
 	var lastTransition uint32 = 0
 	var lastΔt uint32 = 0
 	var startPos uint32 = 0
