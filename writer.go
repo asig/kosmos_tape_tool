@@ -40,6 +40,7 @@ func fileToBytes(binName string, byteChannel chan byte) {
 	}
 	buf := make([]byte, 256)
 	for blocks := stat.Size() / 256; blocks > 0; blocks-- {
+		f.Read(buf)
 		byteChannel <- buf[0]
 		for j := 255; j > 0; j-- {
 			byteChannel <- buf[j]
@@ -56,8 +57,8 @@ func bytesToBits(byteChannel chan byte, bitChannel chan uint) {
 			break
 		}
 		var i uint
-		for i = 8; i > 0; i-- {
-			if (b & (1 << 7)) > 0 {
+		for i = 0; i < 8; i++ {
+			if (b & (1 << i)) > 0 {
 				bitChannel <- 1
 			} else {
 				bitChannel <- 0
@@ -75,19 +76,21 @@ func bitsToTones(bitChannel chan uint, toneChannel chan Tone) {
 	// Now, read bits
 	cnt := 0
 	for {
-		cnt++
 		bit, more := <-bitChannel
 		if !more {
 			break
 		}
+		cnt++
+		// The Kosmos CP1 uses 30ms and 60ms slices, but there's some
+		// overhead, so let's instead use 35ms and 65ms
 		if bit == 0 {
-			// 0.066 secs high, 0.033 secs low
-			toneChannel <- Tone{Freq: FreqLow, Duration: 0.066}
-			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.033}
+			// 0.065 secs high, 0.035 secs low
+			toneChannel <- Tone{Freq: FreqLow, Duration: 0.065}
+			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.035}
 		} else {
-			// 0.033 secs high, 0.066 secs low
-			toneChannel <- Tone{Freq: FreqLow, Duration: 0.033}
-			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.066}
+			// 0.035 secs high, 0.065 secs low
+			toneChannel <- Tone{Freq: FreqLow, Duration: 0.035}
+			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.065}
 		}
 	}
 
@@ -100,7 +103,15 @@ func bitsToTones(bitChannel chan uint, toneChannel chan Tone) {
 }
 
 func tonesToWav(toneChannel chan Tone, wavName string) {
-
+	writer := NewWavWriter()
+	for {
+		tone, more := <-toneChannel
+		if !more {
+			break
+		}
+		writer.emit(tone)
+	}
+	writer.Write(wavName)
 }
 
 func (self *TapeWriter) convert() {
