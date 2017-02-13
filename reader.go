@@ -90,13 +90,42 @@ func bytesToFile(byteChannel chan byte, binName string) {
 	log.Printf("Wrote %d bytes to file %s.", cnt, binName)
 }
 
+func reorderBytes(byteChannel chan byte, reorderedByteChannel chan byte) {
+	// Kosmos CP1 writes bytes in this order: 0, 254, 253, ..., 1
+	buf := make([]byte, 256)
+	pos := 0
+	block := 1
+	for {
+		b, more := <-byteChannel
+		if !more {
+			log.Printf("No more bytes to read")
+			break
+		}
+		buf[pos] = b
+		pos++
+		if pos == 256 {
+			log.Printf("Reordering Block %d", block)
+			block++
+			reorderedByteChannel <- buf[0]
+			for i := 0; i < 255; i++ {
+				reorderedByteChannel <- buf[255-i]
+			}
+			pos = 0
+		}
+	}
+	log.Printf("Reordered %d blocks", block)
+	close(reorderedByteChannel)
+}
+
 func (self *TapeReader) convert() {
 	toneChannel := make(chan Tone)
 	bitChannel := make(chan uint)
 	byteChannel := make(chan byte)
+	reorderedByteChannel := make(chan byte)
 	wavReader := NewWavReader(self.wavName, toneChannel)
 	go wavReader.Read()
 	go tonesToBits(toneChannel, bitChannel)
 	go bitsToBytes(bitChannel, byteChannel)
-	bytesToFile(byteChannel, self.binName)
+	go reorderBytes(byteChannel, reorderedByteChannel)
+	bytesToFile(reorderedByteChannel, self.binName)
 }

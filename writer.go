@@ -16,11 +16,15 @@ func fileToBytes(binName string, byteChannel chan byte) {
 	defer f.Close()
 	stat, err := f.Stat()
 	checkErr(err)
-	buf := make([]byte, stat.Size())
-	f.Read(buf)
-	log.Printf("Read %d bytes from file %s.", stat.Size(), binName)
-	for _, b := range buf {
-		byteChannel <- b
+	if stat.Size()%256 != 0 {
+		panic("File size is not a multiple of 256!")
+	}
+	buf := make([]byte, 256)
+	for blocks := stat.Size() / 256; blocks > 0; blocks-- {
+		byteChannel <- buf[0]
+		for j := 255; j > 0; j-- {
+			byteChannel <- buf[j]
+		}
 	}
 	close(byteChannel)
 }
