@@ -84,13 +84,13 @@ func bitsToTones(bitChannel chan uint, toneChannel chan Tone) {
 		// The Kosmos CP1 uses 30ms and 60ms slices, but there's some
 		// overhead, so let's instead use 35ms and 65ms
 		if bit == 0 {
-			// 0.065 secs high, 0.035 secs low
-			toneChannel <- Tone{Freq: FreqLow, Duration: 0.065}
-			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.035}
-		} else {
-			// 0.035 secs high, 0.065 secs low
-			toneChannel <- Tone{Freq: FreqLow, Duration: 0.035}
+			// 0.065 secs 0V, 0.035 secs 5V
 			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.065}
+			toneChannel <- Tone{Freq: FreqLow, Duration: 0.035}
+		} else {
+			// 0.035 secs 0V, 0.065 secs 5V
+			toneChannel <- Tone{Freq: FreqHigh, Duration: 0.035}
+			toneChannel <- Tone{Freq: FreqLow, Duration: 0.065}
 		}
 	}
 
