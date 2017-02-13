@@ -8,19 +8,6 @@ import (
 	"os"
 )
 
-func checkErr(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
-func check(condition bool, msg string) {
-	if !condition {
-		log.Printf(msg)
-		os.Exit(1)
-	}
-}
-
 func readUint32(f *os.File) uint32 {
 	buf := make([]byte, 4)
 	_, err := f.Read(buf)
@@ -113,6 +100,7 @@ func (self *WavReader) init(filename string) {
 	var i uint32
 	for i = 0; i < numSamples; i++ {
 		self.data[i] = int16(readUint16(f))
+		// readUint16(f) // Skip other channel
 		f.Seek(int64((self.numChannels-1)*(self.bitsPerSample/8)), 1) // Skip other channels
 	}
 	log.Print("Data loaded")

@@ -8,56 +8,27 @@ import (
 )
 
 var (
-	filename string
+	wavname string
+	binname string
 )
 
 func usage() {
 	_, file := filepath.Split(os.Args[0])
-	fmt.Printf("Usage: %s <wav-file>\n", file)
+	fmt.Printf("Usage: %s <wav-file> <target>\n", file)
 	os.Exit(1)
 }
 
 func init() {
-	if len(os.Args) != 2 {
+	if len(os.Args) != 3 {
 		usage()
 	}
-	filename = os.Args[1]
+	wavname = os.Args[1]
+	binname = os.Args[2]
 }
 
 type converterState int
 
-const ( // iota is reset to 0
-	beforeSyncTone converterState = iota
-	inData         converterState = iota
-	afterData                     = iota
-)
-
-// func convertToBits(input chan Tone, output chan int) {
-
-// 	state := before_sync_tone
-
-// 	for {
-// 		tone := <-input
-// 		if tone.Duration == 0 {
-// 			break
-// 		}
-// 		switch(state) {
-// 		case before_sync_tone:
-// 			if tone.Freq == low && tone.Duration > 15 {
-// 				state = in_data
-// 			}
-// 			break
-// 		case in_data:
-// 			if tone.Freq =
-// 			case
-// 		}
-// 		log.Printf("CONSUMER: freq = %d, duration = %f", tone.Freq, tone.Duration)
-// 	}
-
-// }
-
 func tonesToBits(toneChannel chan Tone, bitChannel chan uint) {
-
 	// wait for the signal tone (16 secs low frequency)
 	for {
 		tone := <-toneChannel
@@ -120,23 +91,28 @@ func bitsToBytes(bitChannel chan uint, byteChannel chan byte) {
 }
 
 func bytesToFile(byteChannel chan byte) {
+	f, err := os.Create(binname)
+	checkErr(err)
+	defer f.Close()
 	cnt := 0
 	for {
-		byte, more := <-byteChannel
+		b, more := <-byteChannel
 		if !more {
 			log.Printf("No more bytes to read")
 			break
 		}
-		log.Printf("Byte %03d: %03d", cnt, byte)
+		log.Printf("Byte %03d: %03d", cnt, b)
+		f.Write([]byte{b})
 		cnt++
 	}
+	log.Printf("Wrote %d bytes to file %s.", cnt, binname)
 }
 
 func main() {
 	toneChannel := make(chan Tone)
 	bitChannel := make(chan uint)
 	byteChannel := make(chan byte)
-	wavReader := NewWavReader(filename, toneChannel)
+	wavReader := NewWavReader(wavname, toneChannel)
 	go wavReader.read()
 	go tonesToBits(toneChannel, bitChannel)
 	go bitsToBytes(bitChannel, byteChannel)
