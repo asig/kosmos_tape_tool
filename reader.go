@@ -113,7 +113,7 @@ func reorderBytes(byteChannel chan byte, reorderedByteChannel chan byte) {
 	// Kosmos CP1 writes bytes in this order: 0, 254, 253, ..., 1
 	buf := make([]byte, 256)
 	pos := 0
-	block := 1
+	block := 0
 	for {
 		b, more := <-byteChannel
 		if !more {
