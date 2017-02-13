@@ -119,8 +119,9 @@ func (self *WavReader) init(filename string) {
 	var i uint32
 	for i = 0; i < numSamples; i++ {
 		self.data[i] = int16(readUint16(f))
-		// readUint16(f) // Skip other channel
-		f.Seek(int64((self.numChannels-1)*(self.bitsPerSample/8)), 1) // Skip other channels
+		if self.numChannels > 1 {
+			f.Seek(int64(self.blockAlign-2), 1) // Skip other channels
+		}
 	}
 	log.Print("Data loaded")
 	f.Close()
@@ -143,7 +144,7 @@ func (self *WavReader) Read() {
 	var lastΔt uint32 = 0
 	var startPos uint32 = 0
 	var i uint32
-	for i = 0; i < uint32(len(self.data))-1; i++ {
+	for i = 1; i < uint32(len(self.data)); i++ {
 		// find zero transitions
 		if self.data[i] >= 0 && self.data[i-1] < 0 {
 			// compute time since last zero transition, normalizing values
