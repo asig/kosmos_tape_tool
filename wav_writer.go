@@ -25,7 +25,7 @@ import (
 	"os"
 )
 
-const maxAmplitude = 20000
+const maxAmplitude = 16000
 
 func writeUint32(f *os.File, val uint32) {
 	buf := make([]byte, 4)
